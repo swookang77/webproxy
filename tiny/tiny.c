@@ -111,11 +111,37 @@ void read_requesthdrs(rio_t *rp)
   char buf[MAXLINE];
 
   Rio_readlineb(rp, buf, MAXLINE);
-  while(strcmp(buf, "\r\n")) {
+  while(strcmp(buf, "\r\n")) {   //요청헤더를 종료하는 줄은 \r\n, 이 부분이랑 연관해서 이 함수가 왜 요청헤더를 무시하게 되는지 고민해보자
     Rio_readlineb(rp, buf, MAXLINE);
     printf("%s", buf);
     printf("read_requesthdrs while문 안");
   }
   printf("read_requesthdrs while문 밖");
   return;
+}
+
+int parse_uri(char *uri, char *filename, char *cgiargs)
+{
+  char *ptr;
+
+  if (!strstr(uri, "cgi-bin")) { //uri가 cgi-bin을 포함하고 있지 않으면 static content
+    strcpy(cgiargs, "");
+    strcpy(filename, ".");
+    strcat(filename, uri);
+    if (uri[strlen(uri)-1] == '/')
+      strcat(filename, "home.html");
+    return 1;
+  }
+  else {  /* Dynamic content */
+    ptr = index(uri,'?');
+    if (ptr) {
+      strcpy(cgiargs, ptr+1); 
+      *ptr = '\0'; //이거 왜 함 ? 
+    }
+    else
+      strcpy(cgiargs,"");
+    strcpy(filename,".");
+    strcat(filename,uri);
+    return 0;
+  }
 }
