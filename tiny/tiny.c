@@ -145,3 +145,29 @@ int parse_uri(char *uri, char *filename, char *cgiargs)
     return 0;
   }
 }
+
+void serve_static(int fd, char *filename, int filesize)
+{
+  int srcfd;
+  char *srcp, filetype[MAXLINE], buf[MAXBUF];
+
+  /* Send response headers to client */
+  get_filetype(filename, filetype);
+  sprintf(buf, "HTTP/1.0 200 OK\r\n");
+  sprintf(buf, "%sServer: Tiny Web Server\r\n", buf);
+  sprintf(buf, "%sConnection: close\r\n", buf);
+  sprintf(buf, "%sContent-length: %d\r\n", buf, filesize);
+  sprintf(buf, "%sContent-type: %s\r\n\r\n", buf, filetype);
+  Rio_writen(fd, buf, strlen(buf));
+
+  printf("Response headers:\n");
+  printf("%s", buf);
+
+  /* Send response body to client */
+  srcfd = Open(filename, O_RDONLY, 0); // 요청한 파일의 식별자를 얻음
+  srcp = Mmap(0, filesize, PROT_READ, MAP_PRIVATE, srcfd, 0); //요청한 파일을 가상메모리에 매핑
+  Close(srcfd);  //매핑했으니 이제 식별자 필요없음  
+  Rio_writen(fd, srcp, filesize); // 주소 srcp에서 시작하는 filesize byte를 클라이언트의 연결식별자로 복사. (파일 전송)
+  Munmap(srcp, filesize); //매핑된 가상메모리 영역을 free 
+}
+
