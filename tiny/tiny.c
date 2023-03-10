@@ -28,8 +28,9 @@ int main(int argc, char **argv) {
     fprintf(stderr, "usage: %s <port>\n", argv[0]);
     exit(1);
   }
-
+  
   listenfd = Open_listenfd(argv[1]);
+  printf("듣기 소켓 오픈\n");
   while (1) {
     clientlen = sizeof(clientaddr);
     connfd = Accept(listenfd, (SA *)&clientaddr,&clientlen);  
@@ -37,6 +38,7 @@ int main(int argc, char **argv) {
     printf("Accepted connection from (%s, %s)\n", hostname, port);
     doit(connfd);   // handles one HTTP transaction
     Close(connfd);  
+    printf("connfd 닫음\n");
   }
 }
 void doit(int fd)
@@ -49,14 +51,15 @@ void doit(int fd)
 
   Rio_readinitb(&rio,fd); 
   Rio_readlineb(&rio, buf, MAXLINE); // Rio_readlineb함수를 사용해서 요청 라인을 읽어들임
-  printf("Request headers:\n");
-  printf("%s", buf);
+  printf("요청라인:%s", buf);
   sscanf(buf, "%s %s %s", method, uri, version);
   if (strcasecmp(method, "GET")) {
     clienterror(fd, method, "501", "Not implemented", "Tiny does not implement this method");
     return;
   }
-  read_requesthdrs(&rio); //이제 다른 요청 헤더들을 무시
+
+  printf("Request headers:\n");
+  read_requesthdrs(&rio); 
 
   is_static = parse_uri(uri,filename,cgiargs);
 
@@ -111,12 +114,10 @@ void read_requesthdrs(rio_t *rp)
   char buf[MAXLINE];
 
   Rio_readlineb(rp, buf, MAXLINE);
-  while(strcmp(buf, "\r\n")) {   //요청헤더를 종료하는 줄은 \r\n, 이 부분이랑 연관해서 이 함수가 왜 요청헤더를 무시하게 되는지 고민해보자
+  while(strcmp(buf, "\r\n")) {   //buf 와 \r\n이 같으면 0.
     Rio_readlineb(rp, buf, MAXLINE);
     printf("%s", buf);
-    printf("read_requesthdrs while문 안");
   }
-  printf("read_requesthdrs while문 밖");
   return;
 }
 
@@ -181,6 +182,8 @@ void get_filetype(char *filename, char *filetype)
     strcpy(filetype, "image/png");
   else if (strstr(filename, ".jpg"))
     strcpy(filetype, "image/jpeg");
+  else if (strstr(filename, ".mp4"))
+    strcpy(filetype, "video/mp4");
   else
     strcpy(filetype, "text/plain");
 }

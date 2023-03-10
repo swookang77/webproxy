@@ -1057,8 +1057,8 @@ int Open_clientfd(char *hostname, char *port)
 
 int Open_listenfd(char *port) 
 {
+    printf("Open_listenfd함수 실행\n");
     int rc;
-
     if ((rc = open_listenfd(port)) < 0)
 	unix_error("Open_listenfd error");
     return rc;
