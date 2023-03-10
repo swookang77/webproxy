@@ -166,10 +166,13 @@ void serve_static(int fd, char *filename, int filesize)
 
   /* Send response body to client */
   srcfd = Open(filename, O_RDONLY, 0); // 요청한 파일의 식별자를 얻음
-  srcp = Mmap(0, filesize, PROT_READ, MAP_PRIVATE, srcfd, 0); //요청한 파일을 가상메모리에 매핑
+  // srcp = Mmap(0, filesize, PROT_READ, MAP_PRIVATE, srcfd, 0); //요청한 파일을 가상메모리에 매핑
+  srcp = (char *)Malloc(filesize);
+  Rio_readn(srcfd,srcp,filesize);
   Close(srcfd);  //매핑했으니 이제 식별자 필요없음  
   Rio_writen(fd, srcp, filesize); // 주소 srcp에서 시작하는 filesize byte를 클라이언트의 연결식별자로 복사. (파일 전송)
-  Munmap(srcp, filesize); //매핑된 가상메모리 영역을 free 
+  // Munmap(srcp, filesize); //매핑된 가상메모리 영역을 free 
+  free(srcp);
 }
 
 void get_filetype(char *filename, char *filetype)
