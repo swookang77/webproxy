@@ -73,6 +73,8 @@ pid_t Fork(void)
 
     if ((pid = fork()) < 0)
 	unix_error("Fork error");
+
+    printf("fork호출 후\n");
     return pid;
 }
 /* $end forkwrapper */

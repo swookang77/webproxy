@@ -32,8 +32,10 @@ int main(int argc, char **argv) {
   listenfd = Open_listenfd(argv[1]);
   printf("듣기 소켓 오픈\n");
   while (1) {
+    printf("accept호출 이전\n");
     clientlen = sizeof(clientaddr);
     connfd = Accept(listenfd, (SA *)&clientaddr,&clientlen);  
+    printf("accept호출 이후\n");
     Getnameinfo((SA *)&clientaddr, clientlen, hostname, MAXLINE, port, MAXLINE,0);
     printf("Accepted connection from (%s, %s)\n", hostname, port);
     doit(connfd);   // handles one HTTP transaction
@@ -43,13 +45,15 @@ int main(int argc, char **argv) {
 }
 void doit(int fd)
 {
+  printf("doit호출\n");
   int is_static;
   struct stat sbuf;
   char buf[MAXLINE], method[MAXLINE], uri[MAXLINE], version[MAXLINE];
   char filename[MAXLINE], cgiargs[MAXLINE];
   rio_t rio; 
-
+  printf("Rio_readinitb호출 전\n"); 
   Rio_readinitb(&rio,fd); 
+  printf("Rio_readlineb호출 전\n"); 
   Rio_readlineb(&rio, buf, MAXLINE); // Rio_readlineb함수를 사용해서 요청 라인을 읽어들임
   printf("요청라인:%s", buf);
   sscanf(buf, "%s %s %s", method, uri, version);
@@ -200,12 +204,14 @@ void serve_dynamic(int fd, char *filename, char *cgiargs)
   Rio_writen(fd, buf, strlen(buf));
   sprintf(buf, "Server: Tiny Web Server\r\n");
   Rio_writen(fd, buf, strlen(buf));
-
-  if (Fork() == 0) { //자식 프로세스 fork (자식 프로세스의 context에서 cgi 프로그램을 돌린다)
-    setenv("QUERY_STRING", cgiargs, 1);  // QUERY_STRING 환경변수를 받은 인자로 초기화
-    Dup2(fd, STDOUT_FILENO); // 자식의 표준 출력을 연결 파일 식별자로 redirect.
-    Execve(filename, emptylist, environ); // cgi 프로그램을 로드하고 실행. 
+  if (Fork() == 0) { //자식 프로세스 fork.
+    setenv("QUERY_STRING", cgiargs, 1);  // 자식 프로세스는 QUERY_STRING 환경변수를 받은 인자로 초기화
+    printf("cgi-program호출전\n");
+    Dup2(fd, STDOUT_FILENO); // 자식 프로세스는 표준 출력을 연결 파일 식별자로 redirect.
+    printf("dup2호출후\n");
+    Execve(filename, emptylist, environ); // 자식 프로세스는 cgi 프로그램을 로드하고 실행. 
     //everything that the CGI program writes to standard output goes directly to the client process
   }
   Wait(NULL); 
+ 
 }
