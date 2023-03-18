@@ -28,32 +28,24 @@ int main(int argc, char **argv) {
     fprintf(stderr, "usage: %s <port>\n", argv[0]);
     exit(1);
   }
-  
   listenfd = Open_listenfd(argv[1]);
-  printf("듣기 소켓 오픈\n");
   while (1) {
-    printf("accept호출 이전\n");
     clientlen = sizeof(clientaddr);
     connfd = Accept(listenfd, (SA *)&clientaddr,&clientlen);  
-    printf("accept호출 이후\n");
     Getnameinfo((SA *)&clientaddr, clientlen, hostname, MAXLINE, port, MAXLINE,0);
     printf("Accepted connection from (%s, %s)\n", hostname, port);
     doit(connfd);   // handles one HTTP transaction
     Close(connfd);  
-    printf("connfd 닫음\n");
   }
 }
 void doit(int fd)
 {
-  printf("doit호출\n");
   int is_static;
   struct stat sbuf;
   char buf[MAXLINE], method[MAXLINE], uri[MAXLINE], version[MAXLINE];
   char filename[MAXLINE], cgiargs[MAXLINE];
   rio_t rio; 
-  printf("Rio_readinitb호출 전\n"); 
   Rio_readinitb(&rio,fd); 
-  printf("Rio_readlineb호출 전\n"); 
   Rio_readlineb(&rio, buf, MAXLINE); // Rio_readlineb함수를 사용해서 요청 라인을 읽어들임
   printf("요청라인:%s", buf);
   sscanf(buf, "%s %s %s", method, uri, version);
